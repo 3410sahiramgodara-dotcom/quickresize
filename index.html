@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>QuickResize - 1-Click Photo, Sign & PDF Resizer</title>
-  <!-- PDF लाइब्रेरी -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
     :root { --primary: #2563eb; --primary-hover: #1d4ed8; --bg: #f8fafc; --card: #ffffff; }
@@ -14,12 +13,10 @@
     .title { text-align: center; font-size: 24px; font-weight: 800; color: #1e293b; margin-bottom: 4px; }
     .subtitle { text-align: center; font-size: 13px; color: #64748b; margin-bottom: 20px; }
 
-    /* Step 1: Upload File */
     .dropzone { border: 2px dashed #94a3b8; border-radius: 10px; padding: 25px 15px; text-align: center; cursor: pointer; background: #f1f5f9; transition: 0.2s; }
     .dropzone:hover { border-color: var(--primary); background: #eff6ff; }
     .dropzone input { display: none; }
 
-    /* Step 2 & 3: Options */
     .controls { margin-top: 18px; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
     .section-label { font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 6px; display: block; }
     .quick-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 6px; }
@@ -29,17 +26,14 @@
     input[type="number"], select { width: 100%; padding: 9px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; outline: none; }
     input[type="number"]:focus, select:focus { border-color: var(--primary); }
 
-    /* Step 4: Convert Button */
     .btn-convert { width: 100%; margin-top: 18px; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 700; cursor: pointer; transition: 0.2s; }
     .btn-convert:hover { background: var(--primary-hover); }
     .btn-convert:disabled { background: #94a3b8; cursor: not-allowed; }
 
-    /* Step 5: Details */
     .details-box { display: none; margin-top: 18px; padding: 14px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px; }
     .detail-row { display: flex; justify-content: space-between; margin-bottom: 6px; color: #475569; }
     .detail-row strong { color: #0f172a; }
 
-    /* Step 6: Download */
     .btn-download { display: none; width: 100%; margin-top: 10px; padding: 12px; background: #16a34a; color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: 700; cursor: pointer; text-align: center; }
     .btn-download:hover { background: #15803d; }
   </style>
@@ -50,7 +44,6 @@
   <div class="title">⚡ QuickResize</div>
   <p class="subtitle">रिसाइज़, फ़ॉर्मेट कनवर्टर (JPG, PNG, PDF) व कम्प्रेसर</p>
 
-  <!-- Step 1: Upload File -->
   <div class="dropzone" onclick="document.getElementById('fileInput').click()">
     <div style="font-size: 28px; margin-bottom: 5px;">📁</div>
     <span id="uploadText" style="font-weight: 600; font-size: 14px; color: #1e293b;">यहाँ क्लिक करके फ़ोटो चुनें</span>
@@ -58,48 +51,43 @@
   </div>
 
   <div class="controls">
-    <!-- Step 2: Custom Size -->
     <div>
       <span class="section-label">टारगेट साइज़ (KB)</span>
       <div class="quick-chips">
-        <span class="chip" onclick="setSize(10, this)">10kb</span>
         <span class="chip" onclick="setSize(20, this)">20kb</span>
-        <span class="chip active" onclick="setSize(30, this)">30kb</span>
-        <span class="chip" onclick="setSize(40, this)">40kb</span>
-        <span class="chip" onclick="setSize(50, this)">50kb</span>
+        <span class="chip active" onclick="setSize(50, this)">50kb</span>
+        <span class="chip" onclick="setSize(100, this)">100kb</span>
+        <span class="chip" onclick="setSize(200, this)">200kb</span>
       </div>
-      <input type="number" id="customKB" value="30" min="5" max="5000" placeholder="कस्टम KB दर्ज करें">
+      <input type="number" id="customKB" value="50" min="5" max="5000" placeholder="कस्टम KB">
     </div>
 
-    <!-- Step 3: Format Selection -->
     <div>
       <span class="section-label">फ़ॉर्मेट चुनें</span>
       <select id="formatSelect">
+        <option value="pdf" selected>PDF फ़ॉर्मेट</option>
         <option value="jpeg">JPG / JPEG</option>
         <option value="png">PNG</option>
-        <option value="pdf">PDF फ़ॉर्मेट</option>
       </select>
     </div>
   </div>
 
-  <!-- Step 4: Convert Action -->
-  <button id="convertBtn" class="btn-convert" onclick="processImage()" disabled>Convert (कन्वर्ट करें)</button>
+  <!-- केवल इस बटन पर क्लिक करने पर ही प्रोसेस होगा -->
+  <button id="convertBtn" class="btn-convert" onclick="startConvertProcess()" disabled>Convert (कन्वर्ट करें)</button>
 
-  <!-- Step 5: Details -->
   <div id="detailsBox" class="details-box">
     <div class="detail-row"><span>ओरिजिनल साइज़:</span> <strong id="origSize">-</strong></div>
     <div class="detail-row"><span>कन्वर्टेड साइज़:</span> <strong id="newSize" style="color:#16a34a;">-</strong></div>
     <div class="detail-row"><span>फ़ॉर्मेट:</span> <strong id="finalFormat">-</strong></div>
   </div>
 
-  <!-- Step 6: Download -->
   <button id="downloadBtn" class="btn-download" onclick="downloadFile()">⬇ Download File</button>
 </div>
 
 <script>
 let originalFile = null;
 let processedBlob = null;
-let finalExtension = "jpg";
+let finalExtension = "pdf";
 
 function setSize(kb, el) {
   document.getElementById('customKB').value = kb;
@@ -113,13 +101,20 @@ function handleFile(event) {
 
   originalFile = file;
   document.getElementById('uploadText').innerText = file.name + " (" + (file.size / 1024).toFixed(1) + " KB)";
+  
+  // सिर्फ बटन एक्टिव होगा, बैकग्राउंड में कोई काम नहीं होगा जब तक बटन न दबाएं
   document.getElementById('convertBtn').disabled = false;
+  document.getElementById('convertBtn').innerText = "Convert (कन्वर्ट करें)";
   document.getElementById('detailsBox').style.display = 'none';
   document.getElementById('downloadBtn').style.display = 'none';
 }
 
-function processImage() {
+function startConvertProcess() {
   if (!originalFile) return;
+
+  const btn = document.getElementById('convertBtn');
+  btn.disabled = true;
+  btn.innerText = "प्रोसेसिंग चालू है...";
 
   const targetKB = parseFloat(document.getElementById('customKB').value) || 50;
   const format = document.getElementById('formatSelect').value;
@@ -131,92 +126,100 @@ function processImage() {
     const img = new Image();
     img.src = e.target.result;
     img.onload = function() {
-      // टारगेट अगर बहुत छोटा है (जैसे <50KB), तो डायमेंशन ऑटो-स्केल करें
-      let maxDim = targetKB <= 30 ? 700 : (targetKB <= 60 ? 900 : 1200);
-      let width = img.width;
-      let height = img.height;
-
-      if (width > maxDim || height > maxDim) {
-        if (width > height) {
-          height = Math.round((height * maxDim) / width);
-          width = maxDim;
-        } else {
-          width = Math.round((width * maxDim) / height);
-          height = maxDim;
-        }
-      }
-
-      const canvas = document.createElement('canvas');
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0, width, height);
-
       if (format === "pdf") {
-        // PDF कंप्रेशन लूप: जब तक PDF टारगेट KB के अंदर न आए
-        const { jsPDF } = window.jspdf;
-        let minQ = 0.05, maxQ = 0.9, bestQ = 0.5;
-        let finalPdfBlob = null;
-
-        for (let i = 0; i < 6; i++) {
-          bestQ = (minQ + maxQ) / 2;
-          let imgData = canvas.toDataURL('image/jpeg', bestQ);
-          let pdf = new jsPDF({
-            orientation: width > height ? 'l' : 'p',
-            unit: 'px',
-            format: [width, height],
-            compress: true
-          });
-          pdf.addImage(imgData, 'JPEG', 0, 0, width, height, undefined, 'FAST');
-          let blob = pdf.output('blob');
-          let currentKB = blob.size / 1024;
-
-          if (currentKB > targetKB) {
-            maxQ = bestQ;
-          } else {
-            minQ = bestQ;
-            finalPdfBlob = blob;
-          }
-        }
-
-        // अगर न्यूनतम क्वालिटी पर भी रह गया हो
-        if (!finalPdfBlob) {
-          let imgData = canvas.toDataURL('image/jpeg', 0.05);
-          let pdf = new jsPDF({
-            orientation: width > height ? 'l' : 'p',
-            unit: 'px',
-            format: [width, height],
-            compress: true
-          });
-          pdf.addImage(imgData, 'JPEG', 0, 0, width, height, undefined, 'FAST');
-          finalPdfBlob = pdf.output('blob');
-        }
-
-        processedBlob = finalPdfBlob;
-        showDetails(originalFile.size, processedBlob.size, "PDF");
-
+        strictPdfCompress(img, targetKB);
       } else {
-        // JPG / PNG कंप्रेशन
-        let minQ = 0.05, maxQ = 0.95, bestQ = 0.6;
-        let dataUrl = canvas.toDataURL('image/' + (format === 'png' ? 'png' : 'jpeg'), bestQ);
-
-        if (format === 'jpeg') {
-          for (let i = 0; i < 7; i++) {
-            bestQ = (minQ + maxQ) / 2;
-            dataUrl = canvas.toDataURL('image/jpeg', bestQ);
-            let currentKB = (dataUrl.length * 3 / 4) / 1024;
-            if (currentKB > targetKB) maxQ = bestQ;
-            else minQ = bestQ;
-          }
-        }
-
-        fetch(dataUrl).then(res => res.blob()).then(blob => {
-          processedBlob = blob;
-          showDetails(originalFile.size, blob.size, format.toUpperCase());
-        });
+        strictImageCompress(img, targetKB, format);
       }
+      btn.disabled = false;
+      btn.innerText = "Convert (कन्वर्ट करें)";
     };
   };
+}
+
+function strictPdfCompress(img, targetKB) {
+  const { jsPDF } = window.jspdf;
+  
+  // टारगेट KB के हिसाब से सटीक रेज़ोल्यूशन तय करना
+  let maxW = targetKB <= 30 ? 500 : (targetKB <= 50 ? 650 : (targetKB <= 100 ? 900 : 1200));
+  let scale = Math.min(1.0, maxW / Math.max(img.width, img.height));
+  let quality = 0.7;
+  let finalPdfBlob = null;
+
+  for (let loop = 0; loop < 15; loop++) {
+    const curW = Math.max(100, Math.round(img.width * scale));
+    const curH = Math.max(100, Math.round(img.height * scale));
+
+    const canvas = document.createElement('canvas');
+    canvas.width = curW;
+    canvas.height = curH;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, curW, curH);
+    ctx.drawImage(img, 0, 0, curW, curH);
+
+    const imgData = canvas.toDataURL('image/jpeg', quality);
+    const pdf = new jsPDF({
+      orientation: curW > curH ? 'l' : 'p',
+      unit: 'px',
+      format: [curW, curH],
+      compress: true
+    });
+
+    pdf.addImage(imgData, 'JPEG', 0, 0, curW, curH, undefined, 'FAST');
+    const blob = pdf.output('blob');
+    const curKB = blob.size / 1024;
+
+    finalPdfBlob = blob;
+
+    // अगर आपके कहे अनुसार टारगेट KB के अंदर आ गया, तुरंत रुकें
+    if (curKB <= targetKB) {
+      break;
+    }
+
+    // अगर अभी भी बड़ा है, तो क्वालिटी और डाइमेंशन दोनों को सख्त रूप से घटाएं
+    quality = Math.max(0.08, quality * 0.8);
+    scale *= 0.85;
+  }
+
+  processedBlob = finalPdfBlob;
+  showDetails(originalFile.size, processedBlob.size, "PDF");
+}
+
+function strictImageCompress(img, targetKB, format) {
+  let scale = 1.0;
+  let quality = 0.85;
+  let finalBlob = null;
+
+  for (let loop = 0; loop < 12; loop++) {
+    const curW = Math.max(80, Math.round(img.width * scale));
+    const curH = Math.max(80, Math.round(img.height * scale));
+
+    const canvas = document.createElement('canvas');
+    canvas.width = curW;
+    canvas.height = curH;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0, curW, curH);
+
+    const mime = format === 'png' ? 'image/png' : 'image/jpeg';
+    const dataUrl = canvas.toDataURL(mime, quality);
+    const byteString = atob(dataUrl.split(',')[1]);
+    const ab = new ArrayBuffer(byteString.length);
+    const ia = new Uint8Array(ab);
+    for (let i = 0; i < byteString.length; i++) ia[i] = byteString.charCodeAt(i);
+    const blob = new Blob([ia], { type: mime });
+
+    finalBlob = blob;
+    if (blob.size / 1024 <= targetKB) {
+      break;
+    }
+
+    scale *= 0.85;
+    quality = Math.max(0.1, quality * 0.75);
+  }
+
+  processedBlob = finalBlob;
+  showDetails(originalFile.size, processedBlob.size, format.toUpperCase());
 }
 
 function showDetails(origBytes, newBytes, formatName) {
