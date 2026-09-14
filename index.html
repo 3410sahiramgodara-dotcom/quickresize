@@ -64,11 +64,11 @@
       <div class="quick-chips">
         <span class="chip" onclick="setSize(10, this)">10kb</span>
         <span class="chip" onclick="setSize(20, this)">20kb</span>
-        <span class="chip" onclick="setSize(30, this)">30kb</span>
+        <span class="chip active" onclick="setSize(30, this)">30kb</span>
         <span class="chip" onclick="setSize(40, this)">40kb</span>
-        <span class="chip active" onclick="setSize(50, this)">50kb</span>
+        <span class="chip" onclick="setSize(50, this)">50kb</span>
       </div>
-      <input type="number" id="customKB" value="50" min="5" max="5000" placeholder="कस्टम KB दर्ज करें">
+      <input type="number" id="customKB" value="30" min="5" max="5000" placeholder="कस्टम KB दर्ज करें">
     </div>
 
     <!-- Step 3: Format Selection -->
@@ -131,11 +131,11 @@ function processImage() {
     const img = new Image();
     img.src = e.target.result;
     img.onload = function() {
-      const canvas = document.createElement('canvas');
+      // टारगेट अगर बहुत छोटा है (जैसे <50KB), तो डायमेंशन ऑटो-स्केल करें
+      let maxDim = targetKB <= 30 ? 700 : (targetKB <= 60 ? 900 : 1200);
       let width = img.width;
       let height = img.height;
 
-      const maxDim = 1200;
       if (width > maxDim || height > maxDim) {
         if (width > height) {
           height = Math.round((height * maxDim) / width);
@@ -146,23 +146,57 @@ function processImage() {
         }
       }
 
+      const canvas = document.createElement('canvas');
       canvas.width = width;
       canvas.height = height;
       const ctx = canvas.getContext('2d');
       ctx.drawImage(img, 0, 0, width, height);
 
       if (format === "pdf") {
-        const imgData = canvas.toDataURL('image/jpeg', 0.8);
+        // PDF कंप्रेशन लूप: जब तक PDF टारगेट KB के अंदर न आए
         const { jsPDF } = window.jspdf;
-        const pdf = new jsPDF({
-          orientation: width > height ? 'l' : 'p',
-          unit: 'px',
-          format: [width, height]
-        });
-        pdf.addImage(imgData, 'JPEG', 0, 0, width, height);
-        processedBlob = pdf.output('blob');
+        let minQ = 0.05, maxQ = 0.9, bestQ = 0.5;
+        let finalPdfBlob = null;
+
+        for (let i = 0; i < 6; i++) {
+          bestQ = (minQ + maxQ) / 2;
+          let imgData = canvas.toDataURL('image/jpeg', bestQ);
+          let pdf = new jsPDF({
+            orientation: width > height ? 'l' : 'p',
+            unit: 'px',
+            format: [width, height],
+            compress: true
+          });
+          pdf.addImage(imgData, 'JPEG', 0, 0, width, height, undefined, 'FAST');
+          let blob = pdf.output('blob');
+          let currentKB = blob.size / 1024;
+
+          if (currentKB > targetKB) {
+            maxQ = bestQ;
+          } else {
+            minQ = bestQ;
+            finalPdfBlob = blob;
+          }
+        }
+
+        // अगर न्यूनतम क्वालिटी पर भी रह गया हो
+        if (!finalPdfBlob) {
+          let imgData = canvas.toDataURL('image/jpeg', 0.05);
+          let pdf = new jsPDF({
+            orientation: width > height ? 'l' : 'p',
+            unit: 'px',
+            format: [width, height],
+            compress: true
+          });
+          pdf.addImage(imgData, 'JPEG', 0, 0, width, height, undefined, 'FAST');
+          finalPdfBlob = pdf.output('blob');
+        }
+
+        processedBlob = finalPdfBlob;
         showDetails(originalFile.size, processedBlob.size, "PDF");
+
       } else {
+        // JPG / PNG कंप्रेशन
         let minQ = 0.05, maxQ = 0.95, bestQ = 0.6;
         let dataUrl = canvas.toDataURL('image/' + (format === 'png' ? 'png' : 'jpeg'), bestQ);
 
