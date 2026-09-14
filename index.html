@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QuickResize - 1-Click Photo, Sign & PDF Resizer</title>
+  <!-- PDF लाइब्रेरी -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    :root { --primary: #2563eb; --primary-hover: #1d4ed8; --bg: #f8fafc; --card: #ffffff; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
+    body { background: var(--bg); display: flex; justify-content: center; padding: 20px 10px; }
+    .card { background: var(--card); width: 100%; max-width: 480px; padding: 24px; border-radius: 14px; box-shadow: 0 8px 24px rgba(0,0,0,0.06); border: 1px solid #e2e8f0; }
+    .title { text-align: center; font-size: 24px; font-weight: 800; color: #1e293b; margin-bottom: 4px; }
+    .subtitle { text-align: center; font-size: 13px; color: #64748b; margin-bottom: 20px; }
+
+    /* Step 1: Upload File */
+    .dropzone { border: 2px dashed #94a3b8; border-radius: 10px; padding: 25px 15px; text-align: center; cursor: pointer; background: #f1f5f9; transition: 0.2s; }
+    .dropzone:hover { border-color: var(--primary); background: #eff6ff; }
+    .dropzone input { display: none; }
+
+    /* Step 2 & 3: Options */
+    .controls { margin-top: 18px; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .section-label { font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 6px; display: block; }
+    .quick-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 6px; }
+    .chip { padding: 4px 8px; font-size: 11px; font-weight: 600; border: 1px solid #cbd5e1; border-radius: 5px; background: white; cursor: pointer; }
+    .chip.active { background: var(--primary); color: white; border-color: var(--primary); }
+    
+    input[type="number"], select { width: 100%; padding: 9px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; outline: none; }
+    input[type="number"]:focus, select:focus { border-color: var(--primary); }
+
+    /* Step 4: Convert Button */
+    .btn-convert { width: 100%; margin-top: 18px; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 700; cursor: pointer; transition: 0.2s; }
+    .btn-convert:hover { background: var(--primary-hover); }
+    .btn-convert:disabled { background: #94a3b8; cursor: not-allowed; }
+
+    /* Step 5: Details */
+    .details-box { display: none; margin-top: 18px; padding: 14px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px; }
+    .detail-row { display: flex; justify-content: space-between; margin-bottom: 6px; color: #475569; }
+    .detail-row strong { color: #0f172a; }
+
+    /* Step 6: Download */
+    .btn-download { display: none; width: 100%; margin-top: 10px; padding: 12px; background: #16a34a; color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: 700; cursor: pointer; text-align: center; }
+    .btn-download:hover { background: #15803d; }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <div class="title">⚡ QuickResize</div>
+  <p class="subtitle">रिसाइज़, फ़ॉर्मेट कनवर्टर (JPG, PNG, PDF) व कम्प्रेसर</p>
+
+  <!-- Step 1: Upload File -->
+  <div class="dropzone" onclick="document.getElementById('fileInput').click()">
+    <div style="font-size: 28px; margin-bottom: 5px;">📁</div>
+    <span id="uploadText" style="font-weight: 600; font-size: 14px; color: #1e293b;">यहाँ क्लिक करके फ़ोटो चुनें</span>
+    <input type="file" id="fileInput" accept="image/*" onchange="handleFile(event)">
+  </div>
+
+  <div class="controls">
+    <!-- Step 2: Custom Size -->
+    <div>
+      <span class="section-label">टारगेट साइज़ (KB)</span>
+      <div class="quick-chips">
+        <span class="chip" onclick="setSize(10, this)">10kb</span>
+        <span class="chip" onclick="setSize(20, this)">20kb</span>
+        <span class="chip" onclick="setSize(30, this)">30kb</span>
+        <span class="chip" onclick="setSize(40, this)">40kb</span>
+        <span class="chip active" onclick="setSize(50, this)">50kb</span>
+      </div>
+      <input type="number" id="customKB" value="50" min="5" max="5000" placeholder="कस्टम KB दर्ज करें">
+    </div>
+
+    <!-- Step 3: Format Selection -->
+    <div>
+      <span class="section-label">फ़ॉर्मेट चुनें</span>
+      <select id="formatSelect">
+        <option value="jpeg">JPG / JPEG</option>
+        <option value="png">PNG</option>
+        <option value="pdf">PDF फ़ॉर्मेट</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Step 4: Convert Action -->
+  <button id="convertBtn" class="btn-convert" onclick="processImage()" disabled>Convert (कन्वर्ट करें)</button>
+
+  <!-- Step 5: Details -->
+  <div id="detailsBox" class="details-box">
+    <div class="detail-row"><span>ओरिजिनल साइज़:</span> <strong id="origSize">-</strong></div>
+    <div class="detail-row"><span>कन्वर्टेड साइज़:</span> <strong id="newSize" style="color:#16a34a;">-</strong></div>
+    <div class="detail-row"><span>फ़ॉर्मेट:</span> <strong id="finalFormat">-</strong></div>
+  </div>
+
+  <!-- Step 6: Download -->
+  <button id="downloadBtn" class="btn-download" onclick="downloadFile()">⬇ Download File</button>
+</div>
+
+<script>
+let originalFile = null;
+let processedBlob = null;
+let finalExtension = "jpg";
+
+function setSize(kb, el) {
+  document.getElementById('customKB').value = kb;
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function handleFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  originalFile = file;
+  document.getElementById('uploadText').innerText = file.name + " (" + (file.size / 1024).toFixed(1) + " KB)";
+  document.getElementById('convertBtn').disabled = false;
+  document.getElementById('detailsBox').style.display = 'none';
+  document.getElementById('downloadBtn').style.display = 'none';
+}
+
+function processImage() {
+  if (!originalFile) return;
+
+  const targetKB = parseFloat(document.getElementById('customKB').value) || 50;
+  const format = document.getElementById('formatSelect').value;
+  finalExtension = format === 'jpeg' ? 'jpg' : format;
+
+  const reader = new FileReader();
+  reader.readAsDataURL(originalFile);
+  reader.onload = function(e) {
+    const img = new Image();
+    img.src = e.target.result;
+    img.onload = function() {
+      const canvas = document.createElement('canvas');
+      let width = img.width;
+      let height = img.height;
+
+      const maxDim = 1200;
+      if (width > maxDim || height > maxDim) {
+        if (width > height) {
+          height = Math.round((height * maxDim) / width);
+          width = maxDim;
+        } else {
+          width = Math.round((width * maxDim) / height);
+          height = maxDim;
+        }
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+
+      if (format === "pdf") {
+        const imgData = canvas.toDataURL('image/jpeg', 0.8);
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF({
+          orientation: width > height ? 'l' : 'p',
+          unit: 'px',
+          format: [width, height]
+        });
+        pdf.addImage(imgData, 'JPEG', 0, 0, width, height);
+        processedBlob = pdf.output('blob');
+        showDetails(originalFile.size, processedBlob.size, "PDF");
+      } else {
+        let minQ = 0.05, maxQ = 0.95, bestQ = 0.6;
+        let dataUrl = canvas.toDataURL('image/' + (format === 'png' ? 'png' : 'jpeg'), bestQ);
+
+        if (format === 'jpeg') {
+          for (let i = 0; i < 7; i++) {
+            bestQ = (minQ + maxQ) / 2;
+            dataUrl = canvas.toDataURL('image/jpeg', bestQ);
+            let currentKB = (dataUrl.length * 3 / 4) / 1024;
+            if (currentKB > targetKB) maxQ = bestQ;
+            else minQ = bestQ;
+          }
+        }
+
+        fetch(dataUrl).then(res => res.blob()).then(blob => {
+          processedBlob = blob;
+          showDetails(originalFile.size, blob.size, format.toUpperCase());
+        });
+      }
+    };
+  };
+}
+
+function showDetails(origBytes, newBytes, formatName) {
+  document.getElementById('origSize').innerText = (origBytes / 1024).toFixed(1) + " KB";
+  document.getElementById('newSize').innerText = (newBytes / 1024).toFixed(1) + " KB";
+  document.getElementById('finalFormat').innerText = formatName;
+
+  document.getElementById('detailsBox').style.display = 'block';
+  document.getElementById('downloadBtn').style.display = 'block';
+}
+
+function downloadFile() {
+  if (!processedBlob) return;
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(processedBlob);
+  link.download = `QuickResize_${document.getElementById('customKB').value}kb.${finalExtension}`;
+  link.click();
+}
+</script>
+
+</body>
+</html>
